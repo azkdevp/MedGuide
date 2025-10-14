@@ -36,7 +36,7 @@ async function analyzeDrugInteractions() {
 
   // ---- 3️⃣ Call AWS API Gateway endpoint ----
   try {
-    const response = await fetch("YOUR_API_GATEWAY_ENDPOINT_HERE", {
+    const response = await fetch("https://9fpx40p10g.execute-api.us-east-1.amazonaws.com/Prod/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
