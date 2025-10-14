@@ -1,14 +1,8 @@
-// =====================
-// MedGuide Frontend JS - FIXED VERSION
-// =====================
-
 let medications = [];
 let selectedCategory = null;
 
-// ✅ AWS API endpoint
 const API_ENDPOINT = "https://9fpx40p10g.execute-api.us-east-1.amazonaws.com/Prod/query";
 
-// Drug categories
 const drugCategories = {
     cardiovascular: ['Lisinopril', 'Metoprolol', 'Amlodipine', 'Warfarin', 'Atorvastatin', 'Clopidogrel'],
     diabetes: ['Metformin', 'Insulin', 'Glipizide', 'Januvia', 'Lantus', 'Humalog'],
@@ -23,13 +17,12 @@ const commonDrugs = [
     'Atorvastatin', 'Amlodipine', 'Metoprolol', 'Sertraline', 'Omeprazole', 'Levothyroxine'
 ];
 
-// UI Helper Functions
 function scrollToChecker() {
     document.getElementById('checker').scrollIntoView({ behavior: 'smooth' });
 }
 
 function showDemo() {
-    alert('🎬 Demo Video\n\nIn a real implementation, this would show:\n• Platform walkthrough\n• AI analysis demonstration\n• Healthcare provider integration\n• Success stories and testimonials');
+    alert('🎬 Demo: AI-Powered Drug Analysis\nThis platform uses AWS Bedrock AI to analyze drug interactions in real-time.');
 }
 
 function selectCategory(category) {
@@ -143,14 +136,12 @@ function clearAll() {
     updateCheckButton();
 }
 
-// ✅ FIXED: AWS Lambda Integration with Patient Profile
+// MAIN ANALYSIS FUNCTION
 async function checkInteractions() {
     const analysisSection = document.getElementById('analysisSection');
     const loadingState = document.getElementById('loadingState');
     const resultsState = document.getElementById('resultsState');
-    const resultsDiv = document.getElementById('interactionDetails');
 
-    // ✅ Get patient profile data
     const ageGroup = document.getElementById('ageGroup').value || 'Not specified';
     const conditions = document.getElementById('conditions').value || 'Not specified';
     const allergies = document.getElementById('allergies').value || 'None';
@@ -159,12 +150,10 @@ async function checkInteractions() {
     analysisSection.classList.add('fade-in');
     loadingState.classList.remove('hidden');
     resultsState.classList.add('hidden');
-    resultsDiv.innerHTML = '';
 
     analysisSection.scrollIntoView({ behavior: 'smooth' });
 
     try {
-        // ✅ Send patient profile + medications to Lambda
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -181,68 +170,176 @@ async function checkInteractions() {
         if (!response.ok) throw new Error(`API call failed (${response.status})`);
 
         const data = await response.json();
-        
-        // ✅ Handle both direct response and body-wrapped response
         const reportData = data.body ? JSON.parse(data.body) : data;
+        const aiAnalysis = reportData.ai_analysis;
 
         loadingState.classList.add('hidden');
         resultsState.classList.remove('hidden');
         resultsState.classList.add('fade-in');
 
-        // ✅ Display results with proper URL handling
-        resultsDiv.innerHTML = `
-            <div class="border-2 border-green-200 bg-green-50 rounded-xl p-6">
-                <h3 class="text-xl font-bold text-green-700 mb-3">✅ Analysis Complete</h3>
-                <div class="space-y-2 mb-4">
-                    <p class="text-gray-700"><strong>Status:</strong> ${reportData.status || "success"}</p>
-                    <p class="text-gray-700"><strong>Analyzed Drugs:</strong> ${reportData.analyzed_drugs?.join(', ') || medications.join(', ')}</p>
-                    <p class="text-gray-700"><strong>Age Group:</strong> ${ageGroup}</p>
-                    <p class="text-gray-700"><strong>Medical Conditions:</strong> ${conditions}</p>
-                    <p class="text-gray-700"><strong>Allergies:</strong> ${allergies}</p>
-                </div>
-                ${reportData.report_url ? `
-                    <a href="${reportData.report_url}" target="_blank" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold mb-3 transition-colors">
-                        📄 Download PDF Report
-                    </a>
-                ` : '<p class="text-red-600 font-semibold">⚠️ PDF generation in progress...</p>'}
-                ${reportData.verify_page ? `
-                    <br><a href="${reportData.verify_page}" target="_blank" class="text-blue-600 underline text-sm">
-                        🔗 Verify Report Authenticity
-                    </a>
-                ` : ''}
-            </div>
-        `;
+        // Display Safety Overview
+        displaySafetyOverview(aiAnalysis, reportData);
 
-        // ✅ Update safety score display
-        updateSafetyScore(reportData);
+        // Display Detailed Interactions
+        displayInteractions(aiAnalysis);
+
+        // Update Safety Score
+        updateSafetyScore(aiAnalysis);
+
+        // Store report URL globally
+        window.currentReportUrl = reportData.report_url;
+        window.currentVerifyUrl = reportData.verify_page;
 
     } catch (error) {
         loadingState.classList.add('hidden');
         resultsState.classList.remove('hidden');
-        resultsDiv.innerHTML = `
+        document.getElementById('interactionDetails').innerHTML = `
             <div class="p-6 bg-red-50 border-2 border-red-200 rounded-xl text-red-700">
                 <h3 class="font-bold text-lg mb-2">❌ Analysis Failed</h3>
                 <p class="mb-2">${error.message}</p>
-                <p class="text-sm text-gray-600">Please try again or check your internet connection.</p>
-                <details class="mt-3">
-                    <summary class="cursor-pointer text-sm font-semibold">Technical Details</summary>
-                    <pre class="text-xs mt-2 bg-white p-2 rounded">${error.stack || error.toString()}</pre>
-                </details>
+                <p class="text-sm text-gray-600">Please check your internet connection and try again.</p>
             </div>
         `;
-        console.error('Error calling API:', error);
+        console.error('Error:', error);
     }
 }
 
-// ✅ Update safety score based on response
-function updateSafetyScore(data) {
+function displaySafetyOverview(aiAnalysis, reportData) {
+    const safetyOverview = document.getElementById('safetyOverview');
+    const riskLevel = aiAnalysis.risk_level;
+    const score = aiAnalysis.safety_score;
+
+    const statusConfig = {
+        high: {
+            color: 'red',
+            icon: '🚨',
+            title: 'High Risk Interactions Detected',
+            message: 'Critical drug interactions found. Immediate medical consultation required.',
+            bgColor: 'bg-red-50',
+            borderColor: 'border-red-200',
+            textColor: 'text-red-800'
+        },
+        moderate: {
+            color: 'yellow',
+            icon: '⚠️',
+            title: 'Moderate Risk Profile',
+            message: 'Some interactions detected. Monitor closely and consult your pharmacist.',
+            bgColor: 'bg-yellow-50',
+            borderColor: 'border-yellow-200',
+            textColor: 'text-yellow-800'
+        },
+        low: {
+            color: 'green',
+            icon: '✅',
+            title: 'Low Risk Profile',
+            message: 'No major interactions detected. Continue with regular monitoring.',
+            bgColor: 'bg-green-50',
+            borderColor: 'border-green-200',
+            textColor: 'text-green-800'
+        }
+    };
+
+    const status = statusConfig[riskLevel] || statusConfig.low;
+
+    safetyOverview.innerHTML = `
+        <div class="${status.bgColor} ${status.borderColor} border-2 rounded-2xl p-8">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <span class="text-4xl mr-4">${status.icon}</span>
+                    <div>
+                        <h3 class="text-2xl font-bold ${status.textColor}">${status.title}</h3>
+                        <p class="text-lg ${status.textColor.replace('800', '700')}">${status.message}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold ${status.textColor}">${score}/100</div>
+                    <div class="text-sm ${status.textColor.replace('800', '600')}">Safety Score</div>
+                </div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6 text-center">
+                <div class="bg-white bg-opacity-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold ${status.textColor}">${reportData.analyzed_drugs.length}</div>
+                    <div class="text-sm ${status.textColor.replace('800', '600')}">Medications Analyzed</div>
+                </div>
+                <div class="bg-white bg-opacity-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold ${status.textColor}">${aiAnalysis.interactions.length}</div>
+                    <div class="text-sm ${status.textColor.replace('800', '600')}">Interactions Found</div>
+                </div>
+                <div class="bg-white bg-opacity-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold ${status.textColor}">${aiAnalysis.recommendations.length}</div>
+                    <div class="text-sm ${status.textColor.replace('800', '600')}">Recommendations</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function displayInteractions(aiAnalysis) {
+    const interactionDetails = document.getElementById('interactionDetails');
+
+    const severityColors = {
+        'Minor': 'border-green-200 bg-green-50',
+        'Moderate': 'border-yellow-200 bg-yellow-50',
+        'Major': 'border-orange-200 bg-orange-50',
+        'Severe': 'border-red-200 bg-red-50'
+    };
+
+    const severityBadges = {
+        'Minor': 'bg-green-100 text-green-800',
+        'Moderate': 'bg-yellow-100 text-yellow-800',
+        'Major': 'bg-orange-100 text-orange-800',
+        'Severe': 'bg-red-100 text-red-800'
+    };
+
+    const severityIcons = {
+        'Minor': '✅',
+        'Moderate': '⚠️',
+        'Major': '🔶',
+        'Severe': '🚨'
+    };
+
+    interactionDetails.innerHTML = aiAnalysis.interactions.map((interaction, idx) => `
+        <div class="border-2 ${severityColors[interaction.severity] || 'border-gray-200'} rounded-xl p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">${interaction.drugs}</h4>
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold ${severityBadges[interaction.severity] || 'bg-gray-100 text-gray-800'}">
+                            ${interaction.severity}
+                        </span>
+                        <span class="text-sm text-gray-500">${interaction.mechanism}</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl mb-1">${severityIcons[interaction.severity] || '📊'}</div>
+                    <div class="text-xs text-gray-500">${interaction.confidence}% confidence</div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg p-4 mb-4">
+                <h5 class="font-semibold text-gray-800 mb-2">Clinical Significance:</h5>
+                <p class="text-gray-700 text-sm leading-relaxed">${interaction.clinical_significance}</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h5 class="font-semibold text-blue-800 mb-2">💡 Recommendation:</h5>
+                    <p class="text-blue-700 text-sm">${interaction.recommendation}</p>
+                </div>
+                <div class="bg-orange-50 rounded-lg p-4">
+                    <h5 class="font-semibold text-orange-800 mb-2">⚠️ Monitoring:</h5>
+                    <p class="text-orange-700 text-sm">${interaction.monitoring}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateSafetyScore(aiAnalysis) {
     const safetyScore = document.getElementById('safetyScore');
     const safetyBar = document.getElementById('safetyBar');
     
-    // Calculate score based on risk level or use default
-    let score = 85; // default
-    if (data.risk_level === 'high') score = 45;
-    else if (data.risk_level === 'moderate') score = 70;
+    const score = aiAnalysis.safety_score;
     
     safetyScore.textContent = score;
     safetyBar.style.width = score + '%';
@@ -251,31 +348,47 @@ function updateSafetyScore(data) {
                          'bg-red-500 h-3 rounded-full';
 }
 
-// ✅ FIXED: Download PDF directly from response
 function downloadPDF() {
-    const reportUrl = document.querySelector('a[href*="amazonaws.com"]')?.href;
-    if (reportUrl) {
-        window.open(reportUrl, '_blank');
+    if (window.currentReportUrl) {
+        window.open(window.currentReportUrl, '_blank');
     } else {
         alert('⚠️ Please run the analysis first to generate a PDF report.');
     }
 }
 
-// Misc Features
 function shareWithDoctor() {
-    alert('👨‍⚕️ Share with Healthcare Provider\n\nThis would:\n• Send encrypted report link\n• Notify your healthcare provider securely\n• Schedule follow-up consultation');
+    if (window.currentReportUrl) {
+        const message = `MedGuide Drug Interaction Report\n\nView Report: ${window.currentReportUrl}\nVerify: ${window.currentVerifyUrl}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'MedGuide Report',
+                text: message
+            }).catch(console.error);
+        } else {
+            navigator.clipboard.writeText(message).then(() => {
+                alert('✅ Report link copied to clipboard!\n\nYou can now share it with your healthcare provider.');
+            });
+        }
+    } else {
+        alert('⚠️ Please run the analysis first.');
+    }
 }
 
 function setReminders() {
-    alert('⏰ Medication Reminders\n\nThis feature would:\n• Set up daily medication reminders\n• Track medication adherence\n• Send refill notifications');
+    alert('⏰ Medication Reminders\n\nThis feature would:\n• Set up daily medication reminders\n• Track adherence\n• Send refill notifications');
 }
 
 function notifyProvider() {
-    alert('📧 Healthcare Provider Notification\n\nReport has been prepared for secure transmission to your healthcare provider.');
+    if (window.currentReportUrl) {
+        alert('📧 Provider Notification\n\nYour report has been prepared for sharing:\n\n' + window.currentReportUrl);
+    } else {
+        alert('⚠️ Please run the analysis first.');
+    }
 }
 
 function scheduleConsultation() {
-    alert('📅 Schedule Consultation\n\nThis feature would:\n• Connect with your healthcare provider\n• Schedule telehealth or in-person visit');
+    alert('📅 Schedule Consultation\n\nThis would connect you with:\n• Your primary care physician\n• A clinical pharmacist\n• Telehealth consultation');
 }
 
 function emergencyContact() {
