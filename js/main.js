@@ -34,7 +34,7 @@ function scrollToChecker() {
 }
 
 function showDemo() {
-  alert('🎬 Demo Video\n\nIn a real implementation, this would show:\n• Platform walkthrough\n• AI analysis demonstration\n• Healthcare provider integration\n• Success stories and testimonials');
+  alert('🎬 Demo Video\n\nThis would show:\n• Platform walkthrough\n• AI analysis demo\n• Integration with clinicians');
 }
 
 function selectCategory(category) {
@@ -162,20 +162,15 @@ async function checkInteractions() {
   resultsState.classList.add('hidden');
   resultsDiv.innerHTML = '';
 
-  // Animated loader messages
-  const steps = [
-    "🔍 Checking FDA database...",
-    "🧠 Analyzing drug mechanisms...",
-    "💊 Generating AI clinical summary...",
-    "📊 Finalizing recommendations..."
-  ];
-  let stepIndex = 0;
+  // Loader steps
+  const steps = ["🔍 Checking FDA database...", "🧠 Analyzing mechanisms...", "💊 Generating summary...", "📊 Finalizing report..."];
   const loaderText = document.getElementById('loaderText');
   if (loaderText) {
+    let idx = 0;
     loaderText.textContent = steps[0];
     const interval = setInterval(() => {
-      stepIndex = (stepIndex + 1) % steps.length;
-      loaderText.textContent = steps[stepIndex];
+      idx = (idx + 1) % steps.length;
+      loaderText.textContent = steps[idx];
     }, 2000);
     setTimeout(() => clearInterval(interval), 10000);
   }
@@ -197,103 +192,36 @@ async function checkInteractions() {
     resultsState.classList.remove('hidden');
     resultsDiv.innerHTML = '';
 
-    // --- Risk level + score ---
-    const aiText = data.ai_summary?.toLowerCase() || "";
-    const score = Math.floor(80 + Math.random() * 10);
-    const risk = aiText.includes("severe")
-      ? "High Risk"
-      : aiText.includes("moderate")
-      ? "Moderate Risk"
-      : "Low Risk";
-    const color =
-      risk.includes("High")
-        ? "bg-red-100 text-red-700 border-red-300"
-        : risk.includes("Moderate")
-        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-        : "bg-green-100 text-green-700 border-green-300";
-
-    // --- AI Summary card ---
-    resultsDiv.innerHTML += `
+    // --- AI Summary ---
+    resultsDiv.innerHTML = `
       <div class="border-2 border-gray-200 rounded-xl p-6 mb-6">
-        <h3 class="text-2xl font-bold text-gray-900 mb-2">🧠 AI Clinical Summary</h3>
-        <p class="text-gray-700 leading-relaxed">${data.ai_summary || "No summary provided."}</p>
-      </div>
-
-      <div class="border-2 border-gray-200 rounded-xl p-6 mb-6 ${color}">
-        <div class="flex justify-between items-center">
-          <h3 class="text-xl font-semibold">${risk} Profile</h3>
-          <span class="text-lg font-bold">${score}/100</span>
-        </div>
-        <div class="w-full bg-gray-200 rounded-full h-3 mt-3">
-          <div class="${score >= 85 ? 'bg-green-500' : score >= 80 ? 'bg-yellow-500' : 'bg-red-500'} h-3 rounded-full transition-all duration-700"
-            style="width:${score}%"></div>
-        </div>
-        <p class="text-sm mt-3">${score >= 85 ? "Low risk of major interactions." :
-          score >= 80 ? "Some interactions detected, monitor closely." :
-          "Significant interactions, consult physician immediately."}</p>
+        <h3 class="text-2xl font-bold text-gray-900 mb-3">🧠 AI Clinical Summary</h3>
+        <p class="text-gray-700 leading-relaxed">${data.ai_summary || "No summary generated."}</p>
       </div>
     `;
 
-    // --- Example AI-derived interaction cards ---
+    // --- AI Interactions ---
     const interactionsDiv = document.createElement("div");
-    const text = aiText;
-    const cards = [];
-
-    if (text.includes("warfarin") && text.includes("aspirin")) {
-      cards.push({
-        pair: "Warfarin ↔ Aspirin",
-        severity: "Severe",
-        mechanism: "Pharmacodynamic",
-        recommendation: "Avoid combination. If unavoidable, monitor INR closely.",
-        notes: "Additive anticoagulant effect may increase bleeding risk."
-      });
-    }
-    if (text.includes("lisinopril") && text.includes("aspirin")) {
-      cards.push({
-        pair: "Lisinopril ↔ Aspirin",
-        severity: "Minor",
-        mechanism: "Pharmacokinetic",
-        recommendation: "Continue with regular BP monitoring.",
-        notes: "Slight reduction in antihypertensive effect possible."
-      });
-    }
-    if (cards.length === 0) {
-      cards.push({
-        pair: "No significant interactions detected",
-        severity: "Safe",
-        mechanism: "N/A",
-        recommendation: "Continue current regimen.",
-        notes: "Routine monitoring sufficient."
-      });
-    }
-
-    cards.forEach((c) => {
-      const color =
-        c.severity === "Severe"
-          ? "border-red-400 bg-red-50"
-          : c.severity === "Minor"
-          ? "border-green-400 bg-green-50"
-          : "border-gray-300 bg-gray-50";
+    (data.interactions || []).forEach((c) => {
       interactionsDiv.innerHTML += `
-        <div class="p-6 border-2 ${color} rounded-xl mb-4">
-          <div class="flex justify-between items-center mb-2">
-            <h4 class="font-semibold text-lg">${c.pair}</h4>
-            <span class="px-3 py-1 rounded-full text-sm font-semibold ${
-              c.severity === "Severe"
-                ? "bg-red-200 text-red-800"
-                : "bg-green-200 text-green-800"
-            }">${c.severity}</span>
+        <div class="p-6 border-2 bg-gray-50 rounded-xl mb-4">
+          <h4 class="font-semibold text-lg mb-2">${c.pair}</h4>
+          <div class="space-y-2 text-gray-800">
+            <p><strong>⚠ Clinical Significance:</strong> ${c.clinical_significance}</p>
+            <p><strong>🩺 Monitoring:</strong> ${c.monitoring}</p>
+            <p><strong>💡 Recommendation:</strong> ${c.recommendation}</p>
           </div>
-          <p class="text-sm italic text-gray-700 mb-1">${c.mechanism}</p>
-          <p class="text-gray-800 mb-2">${c.notes}</p>
-          <p><strong>💡 Recommendation:</strong> ${c.recommendation}</p>
         </div>
       `;
     });
 
+    if (!data.interactions || data.interactions.length === 0) {
+      interactionsDiv.innerHTML = `<div class="p-4 text-gray-500 italic">No significant interactions detected.</div>`;
+    }
+
     resultsDiv.appendChild(interactionsDiv);
 
-    // --- Quick actions ---
+    // --- Quick Actions ---
     resultsDiv.innerHTML += `
       <div class="border-2 border-gray-200 rounded-xl p-6 mt-6">
         <h3 class="text-lg font-bold mb-2 text-gray-900">🚀 Quick Actions</h3>
@@ -305,6 +233,7 @@ async function checkInteractions() {
         </div>
       </div>
     `;
+
   } catch (error) {
     loadingState.classList.add('hidden');
     resultsState.classList.remove('hidden');
@@ -315,7 +244,7 @@ async function checkInteractions() {
         <p class="text-sm text-gray-600 mt-2">Please try again or check your AWS configuration.</p>
       </div>
     `;
-    console.error('Error calling API:', error);
+    console.error("Error calling API:", error);
   }
 }
 
@@ -323,11 +252,11 @@ async function checkInteractions() {
 // Misc Features
 // --------------------
 function shareWithDoctor() {
-  alert('👨‍⚕️ Share with Healthcare Provider\n\nThis would:\n• Send encrypted report link\n• Notify your healthcare provider securely');
+  alert('👨‍⚕️ This would securely share the AI report with your doctor.');
 }
 
 function emergencyContact() {
-  alert('🚨 Emergency Services\n\nCall 911 or contact your doctor immediately.');
+  alert('🚨 Call your healthcare provider or emergency services.');
 }
 
 // --------------------
