@@ -1,12 +1,11 @@
 // =====================
-// MedGuide Frontend JS
-// Connected to AWS Lambda via API Gateway + Bedrock Nova AI
+// MedGuide Frontend JS (Updated for Personalized AI Output)
 // =====================
 
 let medications = [];
 let selectedCategory = null;
 
-// ✅ Your AWS API endpoint
+// ✅ AWS API endpoint
 const API_ENDPOINT = "https://9fpx40p10g.execute-api.us-east-1.amazonaws.com/Prod/query";
 
 // --------------------
@@ -149,7 +148,7 @@ function clearAll() {
 }
 
 // --------------------
-// AWS Lambda + Nova AI Integration
+// AWS Lambda Integration
 // --------------------
 async function checkInteractions() {
   const analysisSection = document.getElementById('analysisSection');
@@ -162,15 +161,14 @@ async function checkInteractions() {
   resultsState.classList.add('hidden');
   resultsDiv.innerHTML = '';
 
-  // Loader steps
-  const steps = ["🔍 Checking FDA database...", "🧠 Analyzing mechanisms...", "💊 Generating summary...", "📊 Finalizing report..."];
+  const steps = ["🔍 Checking FDA database...", "🧠 Analyzing mechanisms...", "💊 Generating AI summary...", "📊 Preparing personalized education..."];
   const loaderText = document.getElementById('loaderText');
   if (loaderText) {
-    let idx = 0;
+    let i = 0;
     loaderText.textContent = steps[0];
     const interval = setInterval(() => {
-      idx = (idx + 1) % steps.length;
-      loaderText.textContent = steps[idx];
+      i = (i + 1) % steps.length;
+      loaderText.textContent = steps[i];
     }, 2000);
     setTimeout(() => clearInterval(interval), 10000);
   }
@@ -181,7 +179,13 @@ async function checkInteractions() {
     const response = await fetch(API_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ drugs: medications })
+      body: JSON.stringify({
+        drugs: medications,
+        age_group: document.getElementById('ageGroup')?.value || 'Adult',
+        condition: document.getElementById('condition')?.value || '',
+        allergies: document.getElementById('allergies')?.value || '',
+        patient_mode: true
+      })
     });
 
     if (!response.ok) throw new Error(`API call failed (${response.status})`);
@@ -193,37 +197,46 @@ async function checkInteractions() {
     resultsDiv.innerHTML = '';
 
     // --- AI Summary ---
-    resultsDiv.innerHTML = `
-      <div class="border-2 border-gray-200 rounded-xl p-6 mb-6">
+    resultsDiv.innerHTML += `
+      <div class="border-2 border-gray-200 rounded-xl p-6 mb-6 bg-white shadow-sm">
         <h3 class="text-2xl font-bold text-gray-900 mb-3">🧠 AI Clinical Summary</h3>
         <p class="text-gray-700 leading-relaxed">${data.ai_summary || "No summary generated."}</p>
       </div>
     `;
 
-    // --- AI Interactions ---
+    // --- Interactions (LLM) ---
     const interactionsDiv = document.createElement("div");
-    (data.interactions || []).forEach((c) => {
-      interactionsDiv.innerHTML += `
-        <div class="p-6 border-2 bg-gray-50 rounded-xl mb-4">
-          <h4 class="font-semibold text-lg mb-2">${c.pair}</h4>
-          <div class="space-y-2 text-gray-800">
-            <p><strong>⚠ Clinical Significance:</strong> ${c.clinical_significance}</p>
-            <p><strong>🩺 Monitoring:</strong> ${c.monitoring}</p>
-            <p><strong>💡 Recommendation:</strong> ${c.recommendation}</p>
+    if (data.interactions && data.interactions.length > 0) {
+      data.interactions.forEach((c) => {
+        interactionsDiv.innerHTML += `
+          <div class="p-6 border-2 border-blue-100 bg-blue-50 rounded-xl mb-4">
+            <h4 class="font-semibold text-lg mb-2 text-blue-800">${c.pair}</h4>
+            <div class="space-y-2 text-gray-800">
+              <p><strong>⚠ Clinical Significance:</strong> ${c.clinical_significance}</p>
+              <p><strong>🩺 Monitoring:</strong> ${c.monitoring}</p>
+              <p><strong>💡 Recommendation:</strong> ${c.recommendation}</p>
+            </div>
           </div>
-        </div>
-      `;
-    });
-
-    if (!data.interactions || data.interactions.length === 0) {
+        `;
+      });
+    } else {
       interactionsDiv.innerHTML = `<div class="p-4 text-gray-500 italic">No significant interactions detected.</div>`;
     }
-
     resultsDiv.appendChild(interactionsDiv);
+
+    // --- Patient Education ---
+    if (data.patient_education) {
+      resultsDiv.innerHTML += `
+        <div class="border-2 border-green-200 rounded-xl p-6 mb-6 bg-green-50">
+          <h3 class="text-xl font-bold text-green-800 mb-3">📘 Personalized Patient Education</h3>
+          <p class="text-gray-800 leading-relaxed">${data.patient_education}</p>
+        </div>
+      `;
+    }
 
     // --- Quick Actions ---
     resultsDiv.innerHTML += `
-      <div class="border-2 border-gray-200 rounded-xl p-6 mt-6">
+      <div class="border-2 border-gray-200 rounded-xl p-6 mt-6 bg-white shadow-sm">
         <h3 class="text-lg font-bold mb-2 text-gray-900">🚀 Quick Actions</h3>
         <div class="flex flex-wrap gap-3">
           <a href="${data.report_url}" target="_blank"
@@ -249,14 +262,14 @@ async function checkInteractions() {
 }
 
 // --------------------
-// Misc Features
+// Misc
 // --------------------
 function shareWithDoctor() {
-  alert('👨‍⚕️ This would securely share the AI report with your doctor.');
+  alert('👨‍⚕️ This would securely share your personalized AI report with your healthcare provider.');
 }
 
 function emergencyContact() {
-  alert('🚨 Call your healthcare provider or emergency services.');
+  alert('🚨 If you experience severe symptoms, contact your doctor or emergency services immediately.');
 }
 
 // --------------------
