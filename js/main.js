@@ -38,7 +38,7 @@ function showDemo() {
 
 function selectCategory(evt, category) {
   document.querySelectorAll('.drug-category').forEach(el => el.classList.remove('selected'));
-  event.target.closest('.drug-category').classList.add('selected');
+  evt.target.closest('.drug-category').classList.add('selected');
   selectedCategory = category;
 
   const categoryDrugs = document.getElementById('categoryDrugs');
