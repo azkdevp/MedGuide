@@ -194,7 +194,24 @@ async function checkInteractions() {
 
     loadingState.classList.add('hidden');
     resultsState.classList.remove('hidden');
-    resultsDiv.innerHTML = '';
+
+    // 🧠 Reasoning Agent Layer (ADDED — non-breaking)
+    if (data.intent) {
+      console.log(`🧠 Intent detected by AI Agent: ${data.intent}`);
+      const intentLabels = {
+        interaction_analysis: "Comprehensive Interaction Analysis 🧩",
+        education_focus: "Patient Education & Guidance 📘",
+        doctor_followup: "Doctor Follow-up Recommended ⚠️"
+      };
+      const intentText = intentLabels[data.intent] || "General Analysis Mode";
+      resultsDiv.innerHTML += `
+        <div class="mb-4 p-4 border-2 border-yellow-200 rounded-xl bg-yellow-50 text-yellow-800 font-semibold text-center">
+          🧠 <span>Reasoning Mode:</span> ${intentText}
+        </div>
+      `;
+    }
+
+    resultsDiv.innerHTML = resultsDiv.innerHTML; // keep existing flow untouched
 
     // --- AI Summary ---
     resultsDiv.innerHTML += `
