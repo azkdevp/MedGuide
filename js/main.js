@@ -183,7 +183,7 @@ async function checkInteractions() {
         drugs: medications,
         age_group: document.getElementById('ageGroup')?.value || 'Adult',
         gender: document.getElementById('gender')?.value || 'Unspecified',
-        condition: document.getElementById('condition')?.value || '',
+        condition: document.getElementById('conditions')?.value || '',
         allergies: document.getElementById('allergies')?.value || '',
         patient_mode: true
       })
@@ -250,18 +250,26 @@ async function checkInteractions() {
       `;
     }
 
-    // --- Quick Actions ---
-    resultsDiv.innerHTML += `
-      <div class="border-2 border-gray-200 rounded-xl p-6 mt-6 bg-white shadow-sm">
-        <h3 class="text-lg font-bold mb-2 text-gray-900">🚀 Quick Actions</h3>
-        <div class="flex flex-wrap gap-3">
-          <a href="${data.report_url}" target="_blank"
-             class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition">📄 Download Report</a>
-          <button onclick="shareWithDoctor()" class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition">👨‍⚕️ Share with Doctor</button>
-          <button onclick="emergencyContact()" class="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition">🚨 Emergency Contact</button>
-        </div>
-      </div>
-    `;
+    // --- Update Safety Score dynamically ---
+    if (data.safety_score !== undefined) {
+      const score = data.safety_score;
+      const scoreText = document.getElementById("safetyScore");
+      const scoreBar = document.getElementById("safetyBar");
+      if (scoreText && scoreBar) {
+        scoreText.textContent = score;
+        scoreBar.style.width = `${score}%`;
+        let color = "bg-green-500";
+        if (score < 70) color = "bg-yellow-500";
+        if (score < 40) color = "bg-red-500";
+        scoreBar.className = `h-3 rounded-full ${color}`;
+      }
+    }
+
+    // --- Enable Quick Actions ---
+    if (data.report_url) {
+      const link = document.getElementById("hiddenDownloadLink");
+      if (link) link.href = data.report_url;
+    }
 
   } catch (error) {
     loadingState.classList.add('hidden');
@@ -278,10 +286,23 @@ async function checkInteractions() {
 }
 
 // --------------------
-// Misc
+// Quick Actions
 // --------------------
+function downloadPDF() {
+  const link = document.getElementById("hiddenDownloadLink");
+  if (link && link.href && link.href !== "#") {
+    link.click();
+  } else {
+    alert("⚠️ No report available yet. Please run an analysis first.");
+  }
+}
+
 function shareWithDoctor() {
   alert('👨‍⚕️ This would securely share your personalized AI report with your healthcare provider.');
+}
+
+function setReminders() {
+  alert('⏰ Reminder feature coming soon — this will help track medication schedules.');
 }
 
 function emergencyContact() {
