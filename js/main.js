@@ -26,6 +26,18 @@ const commonDrugs = [
 ];
 
 // --------------------
+// 🧹 CLEAN TEXT FIX (removes stray ? or weird chars)
+// --------------------
+function cleanText(str) {
+  if (!str) return "";
+  return str
+    .replace(/\?/g, "")      // remove question marks
+    .replace(/\uFFFD/g, "")  // remove weird encoding artifacts
+    .replace(/\s+/g, " ")    // normalize spaces
+    .trim();
+}
+
+// --------------------
 // UI Helper Functions
 // --------------------
 function scrollToChecker() {
@@ -216,7 +228,7 @@ async function checkInteractions() {
     resultsDiv.innerHTML += `
       <div class="border-2 border-gray-200 rounded-xl p-6 mb-6 bg-white shadow-sm">
         <h3 class="text-2xl font-bold text-gray-900 mb-3">🧠 AI Clinical Summary</h3>
-        <p class="text-gray-700 leading-relaxed">${data.ai_summary || "No summary generated."}</p>
+        <p class="text-gray-700 leading-relaxed">${cleanText(data.ai_summary) || "No summary generated."}</p>
       </div>
     `;
 
@@ -226,11 +238,11 @@ async function checkInteractions() {
       data.interactions.forEach((c) => {
         interactionsDiv.innerHTML += `
           <div class="p-6 border-2 border-blue-100 bg-blue-50 rounded-xl mb-4">
-            <h4 class="font-semibold text-lg mb-2 text-blue-800">${c.pair}</h4>
+            <h4 class="font-semibold text-lg mb-2 text-blue-800">${cleanText(c.pair)}</h4>
             <div class="space-y-2 text-gray-800">
-              <p><strong>⚠ Clinical Significance:</strong> ${c.clinical_significance}</p>
-              <p><strong>🩺 Monitoring:</strong> ${c.monitoring}</p>
-              <p><strong>💡 Recommendation:</strong> ${c.recommendation}</p>
+              <p><strong>⚠ Clinical Significance:</strong> ${cleanText(c.clinical_significance)}</p>
+              <p><strong>🩺 Monitoring:</strong> ${cleanText(c.monitoring)}</p>
+              <p><strong>💡 Recommendation:</strong> ${cleanText(c.recommendation)}</p>
             </div>
           </div>
         `;
@@ -245,7 +257,7 @@ async function checkInteractions() {
       resultsDiv.innerHTML += `
         <div class="border-2 border-green-200 rounded-xl p-6 mb-6 bg-green-50">
           <h3 class="text-xl font-bold text-green-800 mb-3">📘 Personalized Patient Education</h3>
-          <p class="text-gray-800 leading-relaxed">${data.patient_education}</p>
+          <p class="text-gray-800 leading-relaxed">${cleanText(data.patient_education)}</p>
         </div>
       `;
     }
