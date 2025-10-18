@@ -182,7 +182,7 @@ async function checkInteractions() {
       body: JSON.stringify({
         drugs: medications,
         age_group: document.getElementById('ageGroup')?.value || 'Adult',
-        gender: document.getElementById('gender')?.value || 'Unspecified', // ✅ NEW FIELD
+        gender: document.getElementById('gender')?.value || 'Unspecified',
         condition: document.getElementById('condition')?.value || '',
         allergies: document.getElementById('allergies')?.value || '',
         patient_mode: true
