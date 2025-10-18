@@ -36,7 +36,7 @@ function showDemo() {
   alert('🎬 Demo Video\n\nThis would show:\n• Platform walkthrough\n• AI analysis demo\n• Integration with clinicians');
 }
 
-function selectCategory(category) {
+function selectCategory(evt, category) {
   document.querySelectorAll('.drug-category').forEach(el => el.classList.remove('selected'));
   event.target.closest('.drug-category').classList.add('selected');
   selectedCategory = category;
@@ -307,6 +307,13 @@ function setReminders() {
 
 function emergencyContact() {
   alert('🚨 If you experience severe symptoms, contact your doctor or emergency services immediately.');
+}
+
+function notifyProvider() {
+  alert('📤 We would send your report securely to your provider (integration placeholder).');
+}
+function scheduleConsultation() {
+  alert('📅 We would open scheduling with your provider (integration placeholder).');
 }
 
 // --------------------
