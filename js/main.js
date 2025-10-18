@@ -1,5 +1,5 @@
 // =====================
-// MedGuide Frontend JS (Updated for Personalized AI Output)
+// MedGuide Frontend JS 
 // =====================
 
 let medications = [];
@@ -182,6 +182,7 @@ async function checkInteractions() {
       body: JSON.stringify({
         drugs: medications,
         age_group: document.getElementById('ageGroup')?.value || 'Adult',
+        gender: document.getElementById('gender')?.value || 'Unspecified', // ✅ NEW FIELD
         condition: document.getElementById('condition')?.value || '',
         allergies: document.getElementById('allergies')?.value || '',
         patient_mode: true
@@ -195,7 +196,7 @@ async function checkInteractions() {
     loadingState.classList.add('hidden');
     resultsState.classList.remove('hidden');
 
-    // 🧠 Reasoning Agent Layer (ADDED — non-breaking)
+    // 🧠 Reasoning Agent Layer
     if (data.intent) {
       console.log(`🧠 Intent detected by AI Agent: ${data.intent}`);
       const intentLabels = {
@@ -205,13 +206,11 @@ async function checkInteractions() {
       };
       const intentText = intentLabels[data.intent] || "General Analysis Mode";
       resultsDiv.innerHTML += `
-        <div class="mb-4 p-4 border-2 border-yellow-200 rounded-xl bg-yellow-50 text-yellow-800 font-semibold text-center">
+        <div class="mb-4 p-4 border-2 border-yellow-200 rounded-xl bg-yellow-50 text-yellow-800 font-semibold text-center reasoning-banner">
           🧠 <span>Reasoning Mode:</span> ${intentText}
         </div>
       `;
     }
-
-    resultsDiv.innerHTML = resultsDiv.innerHTML; // keep existing flow untouched
 
     // --- AI Summary ---
     resultsDiv.innerHTML += `
